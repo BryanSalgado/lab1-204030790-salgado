@@ -85,3 +85,25 @@
 (define (git comando)
   comando
  )
+
+
+(define (member? elemento lista)
+ (if (null? lista)
+     #f
+     (if (equal? elemento lista)
+         #t
+         (member? elemento (cdr lista)) 
+       )
+    )
+ )
+
+(define (setCambios listaA listaB)
+  (if (null? listaA)
+      listaB
+      (if (member? (car listaA) listaB)
+          (setCambios (cdr listaA) listaB)
+          (setCambios (cdr listaA) (append listaB (list (car listaA))))
+         )
+     )
+ )
+                    
