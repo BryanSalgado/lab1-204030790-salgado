@@ -13,7 +13,7 @@
 ;Rec: El TDA zonas (listas de listas de Strings)
 ;Esta función crea una lista con las cuatro entradas que representan las zonas básicas
 
-(define (zonas Workspace Index LocalRepository RemoteRepository)
+(define (TDAzonas Workspace Index LocalRepository RemoteRepository)
   (list Workspace Index LocalRepository RemoteRepository)
   )
 
@@ -21,9 +21,9 @@
 ;Dom: El TDA zonas (lista de cuatro listas)
 ;Rec: Booleano
 ;Esta función verifica que la entrada sea un TDA de zonas, retornado #t de ser así, si no, #f.
-(define (zonas? zonasTDA)
-  (if (and (list? zonasTDA) (= (length zonasTDA) 4)
-           (list? (car zonasTDA)) (list? (cadr zonasTDA)) (list? (caddr zonasTDA)) (list? (cadddr zonasTDA))
+(define (zonas? zonas)
+  (if (and (list? zonas) (= (length zonas) 4)
+           (list? (car zonas)) (list? (cadr zonas)) (list? (caddr zonas)) (list? (cadddr zonas))
          )
       #t
       #f
@@ -76,7 +76,49 @@
   )
  )
 
+(define (setWorkspace newWorkspace zonas)
+  (if (zonas? zonas)
+      (TDAzonas newWorkspace
+                (getIndex zonas)
+                (getLocalR zonas)
+                (getRemoteR zonas)
+              )
+      null
+     )
+ )
 
+(define (setIndex newIndex zonas)
+  (if (zonas? zonas)
+      (TDAzonas (getWorkspace zonas)
+                newIndex
+                (getLocalR zonas)
+                (getRemoteR zonas)
+              )
+      null
+     )
+ )
+
+(define (setLocalR newLocalR zonas)
+  (if (zonas? zonas)
+      (TDAzonas (getWorkspace zonas)
+                (getIndex zonas)
+                newLocalR
+                (getRemoteR zonas)
+              )
+      null
+     )
+ )
+
+(define (setRemoteR newRemoteR zonas)
+  (if (zonas? zonas)
+      (TDAzonas (getWorkspace zonas)
+                (getIndex zonas)
+                (getLocalR zonas)
+                newRemoteR
+              )
+      null
+     )
+ )
 
 
 ;Dom: Comando (funcion)
@@ -106,4 +148,41 @@
          )
      )
  )
-                    
+
+(define (pull zonas)
+  (cons (setLocalR  (setCambios (getRemoteR zonas) (getLocalR zonas))
+                    zonas
+              )
+        "pull"
+       )
+  )
+
+
+(define (elemAsociado elemento lista)
+  (if (equal? (car lista) elemento)
+      (car lista)
+      (elemAsociado elemento (cdr lista))
+     )
+ )
+
+
+
+(define (setCambiosElecc listaA listaElem listaB)
+  (if (null? listaElem)
+      listaB
+      (setCambiosElecc listaA (cdr listaElem)
+                       (append listaB (list (elemAsociado (car listaElem) listaA)))
+                   )
+    )
+  )
+
+
+(define (add listaArchivos zonas)
+  (if (null? listaArchivos)
+      (add-all zonas)
+      (setIndex (setCambios (getWorkspace zonas) listaArchivos (getIndex zonas))
+                zonas
+            )
+     )
+ )
+      
