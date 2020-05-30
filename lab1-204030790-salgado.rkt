@@ -197,6 +197,12 @@
      )
  )
 
+(define (getLast lista)
+  (if (null? (cdr lista))
+      (car lista)
+      (getLast (cdr lista))
+    )
+ )
 ;Dom: TDA zonas
 ;Rec: TDA zonas
 ;Esta función entrega el TDA de entrada donde se le ha modificado el Local Repository para contener todos los cambios del Remote Repository
@@ -212,7 +218,7 @@
 ;Rec: Un string de la lista
 ;Esta función entrega un elemento de la lista llamdo igual que el elemento entregado
 (define (elemAsociado elemento lista)
-  (if (equal? (car lista) elemento)
+  (if (equal? (car (car lista)) elemento)
       (car lista)
       (elemAsociado elemento (cdr lista))
      )
@@ -231,8 +237,14 @@
     )
   )
 
-;Sin definir aún
-(define (add-all zonas) zonas);Sin definir aún
+;Dom: TDA zonas
+;Rec: TDA zonas
+;Esta función retorna el TDA zonas en la que a su Index se le agrgan todos los posibles cambios desde su Workspace
+(define (add-all zonas)
+  (setIndex (setCambios (getWorkspace zonas) (getIndex zonas))
+            zonas
+        )
+ )
 
 ;Dom: lista de string y un TDA zonas
 ;Rec: Un TDA zonas
@@ -245,4 +257,14 @@
             )
      )
  )
-      
+
+
+;Dom: String y TDA zonas
+;Rec: TDA zonas
+;Esta función entrega un TDA zonas a la que su zona Local Repository se le agrega su Index de albergar cambios, sino, retorna la zona original.
+(define (commit mensaje zonas)
+  (if (equal? (cdr (getLast commit)) (getIndex zonas))
+      zonas
+      (setLocalR (append (getLocalR zonas) (list (cons mensaje (getIndex zonas)))))
+    )
+)
