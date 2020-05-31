@@ -22,7 +22,7 @@
 ;Rec: Booleano
 ;Esta función verifica que la entrada sea un TDA de zonas, retornado #t de ser así, si no, #f.
 (define (zonas? zonas)
-  (if (and (list? zonas) (= (length zonas) 4)
+  (if (and (list? zonas) (= (length zonas) 5)
            (list? (car zonas)) (list? (cadr zonas)) (list? (caddr zonas)) (list? (cadddr zonas)) (list? (cadddr (cdr zonas)))
          )
       #t
@@ -178,7 +178,7 @@
 (define (member? elemento lista)
  (if (null? lista)
      #f
-     (if (equal? elemento lista)
+     (if (equal? elemento (car lista))
          #t
          (member? elemento (cdr lista)) 
        )
@@ -268,3 +268,17 @@
       (setLocalR (append (getLocalR zonas) (list (cons mensaje (getIndex zonas)))))
     )
 )
+
+
+;Dom: TDA zonas
+;Rec: TDA zonas
+;Esta función entrega el TDA de entrada donde se le ha modificado el Remote Repository para contener todos los cambios del Local Repository
+(define (push zonas)
+  (cons (setRemoteR  (setCambios (getLocalR zonas) (getRemoteR zonas))
+                    zonas
+              )
+        "push"
+       )
+  )
+
+;'((("lab" . "T I C")) (("lab" . "T I C")) (("c1" ("lab" . "T")) ("c2" ("lab" . "T I C"))) (("c1" ("lab" . "T"))) ("Historial"))
