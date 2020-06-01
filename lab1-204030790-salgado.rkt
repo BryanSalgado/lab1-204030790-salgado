@@ -295,3 +295,48 @@
   )
 
 ;'((("lab" . "T I C")) (("lab" . "T I C")) (("c1" ("lab" . "T")) ("c2" ("lab" . "T I C"))) (("c1" ("lab" . "T"))) ("Historial"))
+
+
+
+;Dom: Lista de pares de string
+;Rec: String
+;Esta función rescata los string de la lista y entrega un string con el formato de una de las zonas del TDA zonas
+(define (zona->s zona)
+  (if (null? zona)
+      ""
+      (string-append "\n" (car (car zona)) "\n" (cdr (car zona)) (zona->s (cdr zona)))
+    )
+ )
+;Dom: Lista de lista de pares de string
+;Rec: String
+;Esta función rescata los string de la lista y entrega un string con el formato de una zona con commits del TDA zonas
+(define (commit->s zona)
+  (if (null? zona)
+      ""
+      (string-append "\n" (car (car zona)) (zona->s (cdr (car zona))) (commit->s (cdr zona)))
+    )
+ )
+
+;Dom: Lista de string
+;Rec: String
+;Esta función rescata los string de la lista y entrega un string con el formato del historial del TDA zonas
+(define (historial->s zona)
+  (if (null? zona)
+      ""
+      (string-append "\n" (car zona) (historial->s (cdr zona)))
+    )
+ )
+
+;Dom: TDA zonas
+;Rec: String
+;Esta función rescata los string del TDA zonas y los entrega en su formato 
+(define (zonas->string zonas)
+  (string-append "WORKSPACE" (zona->s (getWorkspace zonas))
+                 "\n\nINDEX" (zona->s (getIndex zonas))
+                 "\n\nLOCAL REPOSITORY" (commit->s (getLocalR zonas))
+                 "\n\nREMOTE REPOSITORY" (commit->s (getRemoteR zonas))
+                 "\n\nHISTORIAL" (historial->s (getHistorial zonas))
+              )
+  )
+                 
+ 
