@@ -168,8 +168,8 @@
 ;Dom: Comando (funcion)
 ;Rec: Funcion git del comando (funcion)
 ;Esta función entrega la función que pase por comando
-(define (git comando)
-  comando
+(define (git comando zonas)
+  (setHistorial (add (getHistorial zonas) (list (cdr (comando zonas)))) (car (comando zonas)))
  )
 
 ;Dom: Un elemento de una lista y una lista
@@ -184,18 +184,25 @@
        )
     )
  )
+
 ;Dom: Dos listas
 ;Rec: Una lista
 ;Esta función entrega una lista que contiene los elementos de la segunda lista de entrada, mas todos los que contiene la primera pero no la segunda.
-(define (setCambios listaA listaB)
+(define (setCambiosRec listaA listaB)
   (if (null? listaA)
-      listaB
+      '()
       (if (member? (car listaA) listaB)
-          (setCambios (cdr listaA) listaB)
-          (setCambios (cdr listaA) (append listaB (list (car listaA))))
+          (append (setCambiosRec (cdr listaA) listaB))
+          (append (list (car listaA)) (setCambiosRec (cdr listaA) listaB))
          )
      )
  )
+
+
+(define (setCambios listaA listaB)
+  (append listaB (setCambiosRec listaA listaB))
+  )
+
 
 (define (getLast lista)
   (if (null? (cdr lista))
@@ -225,14 +232,16 @@
  )
 
 
+
+
 ;Dom: Tres lista de string
 ;Rec: Una lista de string
 ;Una lista que contenga los elementos de "listaB" mas todos los elementos que se requieran por medio de la "listaElem" de "listaA"
-(define (setCambiosElecc listaA listaElem listaB)
+(define (setCambiosElecc listaA listaElem listaCambios)
   (if (null? listaElem)
-      listaB
+      listaCambios
       (setCambiosElecc listaA (cdr listaElem)
-                       (append listaB (list (elemAsociado (car listaElem) listaA)))
+                       (append listaCambios (list (elemAsociado (car listaElem) listaA)))
                    )
     )
   )
@@ -250,11 +259,13 @@
 ;Rec: Un TDA zonas
 ; Esta funcion entrega el TDA con su Index modificado, para que este se le agreguen todos los elementos indicados por "listaArchivos" desde el Workspace
 (define (add listaArchivos zonas)
-  (if (null? listaArchivos)
-      (add-all zonas)
-      (setIndex (setCambiosElecc (getWorkspace zonas) listaArchivos (getIndex zonas))
-                zonas
-            )
+  (cons (if (null? listaArchivos)
+            (add-all zonas)
+            (setIndex (setCambiosElecc (getWorkspace zonas) listaArchivos '())
+                      zonas
+                   )
+          )
+        "add"
      )
  )
 
@@ -265,7 +276,9 @@
 (define (commit mensaje zonas)
   (if (equal? (cdr (getLast commit)) (getIndex zonas))
       zonas
-      (setLocalR (append (getLocalR zonas) (list (cons mensaje (getIndex zonas)))))
+      (cons (setLocalR (append (getLocalR zonas) (list (cons mensaje (getIndex zonas)))))
+            "commit"
+          )
     )
 )
 
