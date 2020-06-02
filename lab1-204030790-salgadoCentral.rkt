@@ -1,0 +1,258 @@
+#lang racket
+
+(require "lab1-204030790-salgadoTDA.rkt")
+;Dom: Comando (funcion)
+;Rec: Funcion git del comando (funcion)
+;Esta función entrega la función que pase por comando
+
+(define git
+  (lambda (comando)
+  (lambda (zonas)
+    (comando zonas)
+  )
+  )
+ )
+
+;Dom: Un elemento de una lista y una lista
+;Rec: Booleano
+;Esta función revisa si el elemento de entrada pertenece a la lista de entrada y retorna #t o #f de estar o no, respectivamente.
+(define (member? elemento lista)
+ (if (null? lista)
+     #f
+     (if (equal? elemento (car lista))
+         #t
+         (member? elemento (cdr lista)) 
+       )
+    )
+ )
+
+;Dom: Dos listas
+;Rec: Una lista
+;Esta función entrega una lista que contiene  todos los elementos que contiene la primera pero no la segunda.
+;Recursión natural
+(define (setCambiosRec listaA listaB)
+  (if (null? listaA)
+      '()
+      (if (member? (car listaA) listaB)
+          (append (setCambiosRec (cdr listaA) listaB))
+          (append (list (car listaA)) (setCambiosRec (cdr listaA) listaB))
+         )
+     )
+ )
+
+;Dom: Dos listas
+;Rec: Una lista
+;Esta función entrega una lista que contiene los elementos de la segunda lista de entrada, mas todos los que contiene la primera pero no la segunda.
+(define (setCambios listaA listaB)
+  (append listaB (setCambiosRec listaA listaB))
+  )
+
+;Dom: Lista
+;Rec: Elemnto de la lista
+;Entrega el último elemnto de una lista
+(define (getLast lista)
+  (if (null? (cdr lista))
+      (car lista)
+      (getLast (cdr lista))
+    )
+ )
+;Dom: TDA zonas
+;Rec: TDA zonas
+;Esta función entrega el TDA de entrada donde se le ha modificado el Local Repository para contener todos los cambios del Remote Repository
+;Recursión natural
+(define (pull zonas)
+  (setHistorial (append (getHistorial zonas) (list "pull"))
+                (setLocalR  (setCambios (getRemoteR zonas) (getLocalR zonas))
+                            zonas
+                       )
+        
+             )
+  )
+
+;Dom: Un string y una lista de string
+;Rec: Un string de la lista
+;Esta función entrega un elemento de la lista llamado igual que el elemento entregado
+;Recursión de cola
+(define (elemAsociado elemento lista)
+  (if (equal? (car (car lista)) elemento)
+      (car lista)
+      (elemAsociado elemento (cdr lista))
+     )
+ )
+
+
+
+
+;Dom: Tres lista de string
+;Rec: Una lista de string
+;Una lista que contenga los elementos de "listaB" mas todos los elementos que se requieran por medio de la "listaElem" de "listaA"
+;Recursión de cola
+(define (setCambiosElecc listaA listaElem listaCambios)
+  (if (null? listaElem)
+      listaCambios
+      (setCambiosElecc listaA (cdr listaElem)
+                       (append listaCambios (list (elemAsociado (car listaElem) listaA)))
+                   )
+    )
+  )
+
+;Dom: TDA zonas
+;Rec: TDA zonas
+;Esta función retorna el TDA zonas en la que a su Index se le agrgan todos los posibles cambios desde su Workspace
+(define (add-all zonas)
+  (setIndex (setCambios (getWorkspace zonas) (getIndex zonas))
+            zonas
+        )
+ )
+
+;Dom: lista de string y un TDA zonas
+;Rec: Un TDA zonas
+; Esta funcion entrega el TDA con su Index modificado, para que este se le agreguen todos los elementos indicados por "listaArchivos" desde el Workspace
+(define add
+  (lambda (listaArchivos)
+  (lambda (zonas)
+    (setHistorial (append (getHistorial zonas) (list "add"))
+                  (if (null? listaArchivos)
+                      (add-all zonas)
+                      (setIndex (setCambiosElecc (getWorkspace zonas) listaArchivos '())
+                                zonas
+                            )
+                    )   
+              )
+   )
+   )
+ )
+
+
+;Dom: String y TDA zonas
+;Rec: TDA zonas
+;Esta función entrega un TDA zonas a la que su zona Local Repository se le agrega su Index de albergar cambios, sino, retorna la zona original.
+(define commit
+  (lambda (mensaje)
+  (lambda (zonas)
+    (if (and (< 0 (length (getLocalR zonas))) (equal? (cdr (getLast (getLocalR zonas))) (getIndex zonas)))
+      zonas
+      (setHistorial (append (getHistorial zonas) (list "commit"))
+                    (setLocalR (append (getLocalR zonas) (list (cons mensaje (getIndex zonas)))) zonas)                    
+                )
+       )  
+   )
+   )
+ )
+
+;Dom: TDA zonas
+;Rec: TDA zonas
+;Esta función entrega el TDA de entrada donde se le ha modificado el Remote Repository para contener todos los cambios del Local Repository
+(define (push zonas)
+  (setHistorial (append (getHistorial zonas) (list "push"))
+                (setRemoteR  (setCambios (getLocalR zonas) (getRemoteR zonas))
+                             zonas
+                     )
+        
+          )
+  )
+
+
+;Dom: Lista de pares de string
+;Rec: String
+;Esta función rescata los string de la lista y entrega un string con el formato de una de las zonas del TDA zonas
+(define (zona->s zona)
+  (if (null? zona)
+      ""
+      (string-append "\n" (car (car zona)) "\n" (cdr (car zona)) (zona->s (cdr zona)))
+    )
+ )
+;Dom: Lista de lista de pares de string
+;Rec: String
+;Esta función rescata los string de la lista y entrega un string con el formato de una zona con commits del TDA zonas
+(define (commit->s zona)
+  (if (null? zona)
+      ""
+      (string-append "\n" (car (car zona)) (zona->s (cdr (car zona))) (commit->s (cdr zona)))
+    )
+ )
+
+;Dom: Lista de string
+;Rec: String
+;Esta función rescata los string de la lista y entrega un string con el formato del historial del TDA zonas
+(define (historial->s zona)
+  (if (null? zona)
+      ""
+      (string-append "\n" (car zona) (historial->s (cdr zona)))
+    )
+ )
+
+;Dom: TDA zonas
+;Rec: String
+;Esta función rescata los string del TDA zonas y los entrega en su formato 
+(define (zonas->string zonas)
+  (string-append "WORKSPACE" (zona->s (getWorkspace zonas))
+                 "\n\nINDEX" (zona->s (getIndex zonas))
+                 "\n\nLOCAL REPOSITORY" (commit->s (getLocalR zonas))
+                 "\n\nREMOTE REPOSITORY" (commit->s (getRemoteR zonas))
+                 "\n\nHISTORIAL" (historial->s (getHistorial zonas))
+              )
+  )
+;Dom: Lista de pares de string
+;Rec: String
+;Esta función rescata los string de la lista y entrega un string con el formato de una lista con los nombres de los archivos en el Index
+(define (index->s zona)
+  (if (null? zona)
+      ""
+      (string-append "\n" (car (car zona)) (index->s (cdr zona)))
+      )
+  )
+;Dom: TDA zonas
+;Rec: String
+;Esta función entrega la consulta del estado del TDA zonas
+(define (status zonas)
+  (string-append "Archivos agregados al Index:" (index->s (getIndex zonas))
+                 "\n\nCantidad de commits en el Local Repository:\n" (number->string (length (getLocalR zonas)))
+                 "\n\nLa rama actual en la que se encuentra el Local Repository:\nmaster"
+             )
+  )
+;Dom: Lista
+;Rec: Lista
+;Esta función entrega una lista con los cinco últimos elementos de la lista argumento
+(define (lastFive lista)
+  (if (< 5 (length lista))
+      (lastFive (cdr lista))
+      lista
+    )
+ )
+
+;Dom: TDA zonas
+;Rec: String
+;Esta función retorna los cinco últimos commits como string
+(define (log zonas)
+  (string-append "Los últimos 5 commit son:" (commit->s (lastFive (getRemoteR zonas))))
+  )
+
+;Ejemplos
+;((git pull) '((("NombreArchivo1" . "Archivo1") ("lab" . "T I C")) (("lab" . "T I C")) (("commit10" ("lab" . "T I C"))) () ("add" "commit")))
+;((git pull) '((("NombreArchivo1" . "Archivo1") ("lab" . "T I C")) (("lab" . "T I C")) (("commit10" ("lab" . "T I C"))) (("commit10" ("lab" . "T I C"))) ("add" "commit" "push")))
+;((git pull) '(() (("lab" . "T I C")) (("commit10" ("lab" . "T I C"))) (("commit" ("Texto" . "AAAA"))) ("add" "commit"))
+
+;(((git add) '("lab")) '((("NombreArchivo1" . "Archivo1") ("lab" . "T I C")) () () () ()))
+;(((git add) '()) '((("NombreArchivo1" . "Archivo1") ("lab" . "T I C")) () () () ()))
+;(((git add) '("NombreArchivo1" "lab")) '((("NombreArchivo1" . "Archivo1") ("lab" . "T I C")) () () () ()))
+
+;(((git commit) "commit10") '((("NombreArchivo1" . "Archivo1") ("lab" . "T I C")) (("lab" . "T I C")) () () ("add")))
+;(((git commit) "COMMIT") '(() (("NombreArchivo1" . "Archivo1") ("lab" . "T I C")) () () ()))
+;(((git commit) "COMMIT") '(() (("NombreArchivo1" . "Archivo1") ("lab" . "T I C")) ("commit0" (("NombreArchivo1" . "Archivo1") ("lab" . "T I C"))) () ()))
+
+;((git push) '((("NombreArchivo1" . "Archivo1") ("lab" . "T I C")) (("lab" . "T I C")) (("commit10" ("lab" . "T I C"))) () ("add" "commit")))
+;((git push) '((("NombreArchivo1" . "Archivo1") ("lab" . "T I C")) (("lab" . "T I C")) () () ("add" "commit")))
+;((git push) '((("NombreArchivo1" . "Archivo1") ("lab" . "T I C")) (("lab" . "T I C")) (("commit10" ("lab" . "T I C"))) ("commit0" (("NombreArchivo1" . "Archivo1") ("lab" . "T I C"))) ("add" "commit")))
+
+;((git zonas->string) '((("NombreArchivo1" . "Archivo1") ("lab" . "T I C")) (("lab" . "T I C")) (("commit10" ("lab" . "T I C"))) (("commit10" ("lab" . "T I C"))) ("add" "commit" "push")))
+;((git zonas->string) '(() () () () ()))
+;((git zonas->string) '((("NombreArchivo1" . "Archivo1") ("lab" . "T I C")) (("lab" . "T I C")) (("commit10" ("lab" . "T I C"))) () ("add" "commit")))
+
+;((git status) '((("NombreArchivo1" . "Archivo1") ("lab" . "T I C")) (("lab" . "T I C")) (("commit10" ("lab" . "T I C"))) (("commit10" ("lab" . "T I C"))) ("add" "commit" "push")))
+;((git status) '(() () () () ()))
+;((git status) '((("NombreArchivo1" . "Archivo1") ("lab" . "T I C")) (("lab" . "T I C")) (("commit10" ("lab" . "T I C"))) () ("add" "commit")))
+
+;((git log) '((("NombreArchivo1" . "Archivo1") ("lab" . "T I C")) (("lab" . "T I C")) (("commit10" ("lab" . "T I C"))) (("commit10" ("lab" . "T I C"))) ("add" "commit" "push")))
+;((git log) '(() () () () ()))
+;((git log) '((("NombreArchivo1" . "Archivo1") ("lab" . "T I C")) (("lab" . "T I C")) (("commit10" ("lab" . "T I C"))) () ("add" "commit")))
